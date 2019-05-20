@@ -3,6 +3,9 @@ package br.ufpe.cin.if710.rss
 import android.app.Activity
 import android.os.AsyncTask
 import android.os.Bundle
+import android.support.v7.widget.DividerItemDecoration
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.widget.TextView
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -11,18 +14,18 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.text.Charsets.UTF_8
 
-class MainActivity : Activity() {
+abstract class MainActivity : Activity() {
 
     //variável para resolução oficional
-    private val RSS_FEED = "http://leopoldomt.com/if1001/g1brasil.xml"
+    //private val RSS_FEED = "http://leopoldomt.com/if1001/g1brasil.xml"
 
     //LINKS PARA TESTAR
     //private val RSS_FEED = "http://rss.cnn.com/rss/edition.rss"
-    //private val RSS_FEED = "http://pox.globo.com/rss/g1/brasil/"
+    private val RSS_FEED = "http://pox.globo.com/rss/g1/brasil/"
     //private val RSS_FEED = "http://pox.globo.com/rss/g1/ciencia-e-saude/"
     //private val RSS_FEED = "http://pox.globo.com/rss/g1/tecnologia/"
 
-    private var conteudoRSS: TextView? = null
+    lateinit var conteudoRSS: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,12 +33,16 @@ class MainActivity : Activity() {
         conteudoRSS = findViewById(R.id.conteudoRSS)
     }
 
-    protected override fun onStart() {
+    override fun onStart() {
         super.onStart()
         try {
             var textXML = CustomAsyncTask().execute(RSS_FEED).get()
             var listRSS = ParserRSS.parse(textXML)
-            //conteudoRSS.setText(textXML)
+            conteudoRSS.apply {
+                layoutManager = LinearLayoutManager(applicationContext)
+                adapter = RSSAdapter(listRSS, applicationContext)
+                addItemDecoration(DividerItemDecoration(applicationContext, LinearLayoutManager.VERTICAL))
+            }
         } catch (e: IOException) {
             e.printStackTrace()
         }
