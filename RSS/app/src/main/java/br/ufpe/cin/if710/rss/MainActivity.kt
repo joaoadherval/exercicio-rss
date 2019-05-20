@@ -1,7 +1,15 @@
 package br.ufpe.cin.if710.rss
 
 import android.app.Activity
+import android.os.AsyncTask
 import android.os.Bundle
+import android.widget.TextView
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.text.Charsets.UTF_8
 
 class MainActivity : Activity() {
 
@@ -14,7 +22,7 @@ class MainActivity : Activity() {
     //private val RSS_FEED = "http://pox.globo.com/rss/g1/ciencia-e-saude/"
     //private val RSS_FEED = "http://pox.globo.com/rss/g1/tecnologia/"
 
-    private val conteudoRSS: TextView
+    private var conteudoRSS: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,10 +30,10 @@ class MainActivity : Activity() {
         conteudoRSS = findViewById(R.id.conteudoRSS)
     }
 
-    protected fun onStart() {
+    protected override fun onStart() {
         super.onStart()
         try {
-            var textXML = CustomAsyncTask().execute(RSS_FEED)
+            var textXML = CustomAsyncTask().execute(RSS_FEED).get()
             var listRSS = ParserRSS.parse(textXML)
             //conteudoRSS.setText(textXML)
         } catch (e: IOException) {
@@ -34,17 +42,11 @@ class MainActivity : Activity() {
 
     }
 
-    inner class CustomAsyncTask: AsyncTask<String, Void, String>() {
-        override fun doInBackgroud(vararg params: String?): String {
-            return result = getRssFeed(params[0])
-        }
-
-        override fun onPreExecute() {
-            super.onPreExecute()
-        }
-
-        override fun onPostExecute(result: String?) {
-            super.onPostExecute(result)
+    class CustomAsyncTask: AsyncTask<String, Void, String>() {
+        override fun doInBackground(vararg p0: String): String {
+            var feed: String = p0[0]
+            var result = getRssFeed(feed)
+            return result
         }
 
         //Opcional - pesquise outros meios de obter arquivos da internet - bibliotecas, etc.
@@ -59,11 +61,13 @@ class MainActivity : Activity() {
                 val out = ByteArrayOutputStream()
                 val buffer = ByteArray(1024)
                 var count: Int
-                while ((count = input!!.read(buffer)) != -1) {
+                do {
+                    count = input!!.read(buffer)
+                    if(count == -1); break
                     out.write(buffer, 0, count)
-                }
+                }while(true)
                 val response = out.toByteArray()
-                rssFeed = String(response, "UTF-8")
+                rssFeed = String(response, UTF_8)
             } finally {
                 if (input != null) {
                     input!!.close()
